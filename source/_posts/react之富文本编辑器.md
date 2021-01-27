@@ -9,6 +9,8 @@ categories:
   - null
 ---
 
+#### 富文本网址---[富文本官网](https://braft.margox.cn/)
+
 ```js
 import React, { useState } from "react";
 // 引入编辑器组件
