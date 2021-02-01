@@ -1,12 +1,8 @@
 ---
-title:
-  "[object Object]": null
-date:
-  "[object Object]": null
-tags:
-  - null
-categories:
-  - null
+title: react富文本编辑器
+date: 2021.1.30
+tags: react
+categories: react
 ---
 
 #### 富文本网址---[富文本官网](https://braft.margox.cn/)
