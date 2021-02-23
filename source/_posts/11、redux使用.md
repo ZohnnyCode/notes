@@ -1,5 +1,5 @@
 ---
-title: react的redux
+title: 11、react的redux
 date: 2021.1.30
 tags: react
 categories: react
