@@ -7,6 +7,12 @@ tags:
 > 版本：webpack：……4.44.2 webpack-cli：……3.3.12
 
 ```js
+打包构建：npx webpack(局部安装采用npx)
+
+查看局部安装webpack版本：npx webpack -v
+```
+
+```js
 mode: "none/development/production"; // webpack自带一些插件，模式分三种
         nono:默认不开启插件
         development：开启一些插件，关闭一些插件
@@ -118,7 +124,7 @@ bundle、chunks、chunk、module的关系
     02、{
             test: /\.less$/,
             use: [
-            MiniCssExtrePlugin.loader, // 把css抽离出来，不使用style-loader动态生成style标签插入样式
+            MiniCssExtrePlugin.loader, // ****** 把css抽离出来，不使用style-loader动态生成style标签插入样式 ******
             "css-loader",
             "postcss-loader",
             "less-loader",
@@ -132,5 +138,100 @@ bundle、chunks、chunk、module的关系
         引入clean-webpack-plugin打包自动删除dist目录再生成(解构引入)
             const { CleanWebpackPlugin } = require("clean-webpack-plugin");
             new CleanWebpackPlugin(),
+
+```
+
+### 另一个老师
+
+```js
+打包项目的时候可以通过命令指定webpack的配置文件：npx webpack --config webpackconfig.js
+
+entry为对象形式时，output的filename可以使用占位符："[]"
+
+output的path必须为绝对路径
+path：path.resolve(__dirname,"dist")
+filename:"[name].js"
+
+file-loader:原理是把打包⼊⼝中识别出的资源模块，移动到输出⽬录，并且返回⼀个地址名称
+
+style-loader:把css-loader生成的样式文件加到html的头部，动态生成style标签插入到页面中
+```
+
+### 多入口
+
+```js
+多入口对应多出口打包出来多个bundle，利用html-webpack-plugin插件生成多个index.html单独引进某个bundle
+entry:{
+    detail:'./src/detail.js'
+}
+output:{
+    path:path.resolve(__dirname,"dist"),
+    filename:"[name].js" // 模块打包是叫后缀是叫js啊
+}
+new htmlWebpackPlugin({
+    title:"hello 我是详情",
+    template:"./index.html",
+    inject:"body",
+    filename:"detail.html",
+    chunks:["detail"]
+})
+
+```
+
+```js
+01、
+HtmlWebpackPlugin
+htmlwebpackplugin会在打包结束后，⾃动⽣成⼀个html⽂件，并把打包⽣成的js模块引⼊到该html中。
+
+new htmlWebpackPlugin({
+    title: "My App",
+    filename: "app.html",
+    template: "./src/index.html"
+ })
+
+ <title><%= htmlWebpackPlugin.options.title %></title>
+
+ 02、clean-webpack-plugin：每次打包先删除dist目录，在生成dist
+ new CleanWebpackPlugin()
+
+03、mini-css-extract-plugin：分离单独的css文件
+{
+    test: /\.css$/,
+    use: [MiniCssExtractPlugin.loader, "css-loader"]
+}
+
+new MiniCssExtractPlugin({
+    filename: "[name].css"
+})
+
+04、sourceMap
+源代码与打包后的代码的映射关系
+在dev模式中，默认开启，关闭的话 可以在配置⽂件⾥：devtool:"none"
+
+推荐配置：
+devtool:"cheap-module-eval-source-map",// 开发环境配置
+devtool:"cheap-module-source-map", // 线上⽣成配置
+
+eval:速度最快,使⽤eval包裹模块代码,
+source-map： 产⽣ .map ⽂件
+cheap:较快，不⽤管列的信息,也不包含loader的sourcemap
+Module：第三⽅模块，包含loader的sourcemap（⽐如jsx to js ，babel的sourcemap）
+inline： 将 .map 作为DataURI嵌⼊，不单独⽣成 .map ⽂件
+
+05、WebpackDevServer：提升开发效率的利器
+启动服务后，会发现dist⽬录没有了，这是因为devServer把打包后的模块不会放在dist⽬录下，⽽是放
+到内存中，从⽽提升速度
+
+ npm install webpack-dev-server -D
+
+ "scripts": {
+    "server": "webpack-dev-server"
+ }
+
+ devServer: {
+    contentBase: "./dist",
+    open: true,
+    port: 8081
+ },
 
 ```
