@@ -6,6 +6,78 @@ tags:
 
 > 版本：webpack：……4.44.2 webpack-cli：……3.3.12
 
+### 00、webpack：模块打包器
+
+### 01、基础
+
+```js
+Webpack：webpack:^4.44.1 webpack-cli:^3.3.12
+npm i webpack webpack-cli -D  // 推荐局部安装
+
+启动：npx webpack
+scripts脚本命令
+"scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev":"webpack",
+    "dev":"webpack --config ./webpack.dachuizi.js",  // 多个webpack配置文件
+    "dev":"rm -rf ./dist && webpack" // 先删除dist目录再构建
+  },
+
+配置：默认配置 0配置
+自定义配置：webpack.config.js
+```
+
+### 02、配置文件
+
+```js
+const path = require('path')
+module.exports = {
+  // 入口
+  entry:'./src/index,js',
+  mode:"development",
+  // 出口
+  output:{
+    // 输出资源的存放路径，必须是绝对路径
+    path:path,resolve(__dirname,"./build"),
+    // 资源名称
+    filename:"index.js"
+  }
+}
+
+```
+
+### 03、核心概念
+
+```js
+1、何为0配置：默认src目录下的index.js为入口
+2、何为配置文件：默认配置文件，自定义配置文件（需要--config来指定）
+3、entry（字符串，数组，对象）：spa、mpa
+  entry：{
+    main:"./src/index,js" // 默认键为：main
+    // 多入口
+    index:'./src/a.js'
+  }
+  // 多出口
+  output:{
+    // 占位符的方式搞定多出口
+    filename:"[name].js" // 入口的键是啥，打包后的出口文件就是啥
+    filename:"[name]-[hash:6].js"
+  }
+
+  spa：单页面应用，可理解为单入口
+  mpa：多页面应用，利于seo
+
+  常见占位符：[name],[hash],[chunkhash],[contenthash]
+
+4、output
+5、mode
+6、loader
+7、plugin
+8、chunk
+9、module
+10、bundle
+```
+
 ```js
 打包构建：npx webpack(局部安装采用npx)
 

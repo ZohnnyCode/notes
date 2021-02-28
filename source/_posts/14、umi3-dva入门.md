@@ -441,6 +441,9 @@ export const deleteOneList = async ({id}) =>{
 01、添加一个按钮，点击打开弹窗
     <Button type="primary" onClick={()=>{
         setIsShowModal(true)
+
+        // 顺便清空表单
+        setRowData(undefined)
     }}>Add</Button>
 
 02、修改和添加都是用的同一个回调函数（onOk触发表单的submit），修改有id，而添加没有
@@ -504,13 +507,266 @@ export const addOneList = async ({values}) =>{
 当点击编辑的时候，保存这一行的值，并传到子组件里面，在弹框显示与否中给表单付初始值
 
 useEffect(()=>{
-    if(rowData === undefined){
+    if(rowData === undefined){ // 点击添加按钮的时候，设置的undefined。setRowData(undefined)
         form.resetFields();
     }else{
         form.setFieldsValue(rowData)
-    }
+    } // 如果是undefined就清空，否则赋值
 },[visible])
 
+注意：给表单赋值form.setFieldsValue(rowData)，如果rowData为无效值（undefined），则表单赋值不生效
+```
+
+### http 状态错误处理及提示优化（umi-request）
+
+```js
+import request, { extend } from "umi-request"
+
+const errorHandler = function (error) {
+  const codeMap = {
+    "021": "An error has occurred",
+    "022": "It’s a big mistake,",
+  }
+  if (error.response) {
+    console.log(error.response.status) // 状态码
+    console.log(error.response.headers) // 头部
+    console.log(error.data) // 主体内容
+    console.log(error.request) // 请求相关的信息（例如网址）
+    console.log(codeMap[error.data.status]) // 相应状态码的提示信息
+
+    // 处理逻辑
+    if(error.response.status > 400){
+      message.error(error.data.message?error.data.message:error.data)
+    }
+  } else {
+    // 请求发送了，但是没有收到回复
+    // console.log(error.message)
+    message.error("Network Error")
+  }
+  // throw error // If throw. The error will continue to be thrown. // 上面做了错误处理，再抛出错误，会再抛，友好提示已经做了，就无须再抛了
+}
+// 1. Unified processing
+const extendRequest = extend({ errorHandler })
+
+********** 把下面的request换成extendRequest ******************
+修改显示逻辑
+export const getRemoteList = async params => {
+  return extendRequest('http://public-api-v1.aspiranzhang.com/users',{
+    method:'get',
+  }).then(res=>{
+    return res // 有结果的返回结果
+  }).catch(err=>{
+    return false // 否则返回布尔值
+  })
+}
+
+增加、修改、删除无实际返回结果，改为
+.then(res=>{
+    return true // 操作成功
+  }).catch(err=>{
+    return false // 操作失败
+  })
+
+****************** 现在service返回布尔值给model *****************
+所以如果返回的是值，布尔判断也为true
+umi-request先做了一层拦截，service返回数据或者布尔值给到model，model中给出友好提示
+effets:{
+  *getRemote(action,{put,call}){
+    const data = yield call(getRemoteList);
+    if(data){ // 这样就保证了reducers的返回值不是undefined
+      yield put({
+        type:"getList",
+        payload:data
+      })
+    }
+  }，
+  *edit({payload:{id,values}},{put,call}){
+    const data = yield call(editRecord,{id,values});
+    if(data){
+      message.success('Edit,success.')
+      yield put({
+        type:'getRemote'
+      })
+    }else{
+      message.error('Edit failed.')
+    }
+  }
+}
+```
+
+```js
+service与后端打交道，所以错误处理在request这里，
+```
+
+### 列表显示加载中(loading)
+
+```js
+loading是在state里面的
+const mapStateToProps = ({ users, loading }) => {
+  console.log(loading)
+  return {
+    users,
+    userListLoading: loading.models.users,
+  }
+}
+
+使用：
+<Table loading={userListLoading} />
+```
+
+### 使用 ts 进行加持
+
+```js
+interface UserModelType {
+  state: UserState;
+  reducers: {
+    getList: Reducer<UserState>,
+  };
+}
+
+interface UserState {
+  data: SingleUserType[];
+  meta: {
+    total: number,
+    per_page: number,
+    page: number,
+  };
+}
+
+interface SingleUserType {
+  id: number;
+  name: string;
+  email: string;
+  create_time: string;
+  update_time: string;
+  status: number;
+}
+
+const UserModel: UserModelType = {
+  state: {
+    data: [],
+    meta: {
+      total: 0,
+      per_page: 5,
+      page: 1,
+    },
+  },
+}
+```
+
+```js
+01、
+import { Dispatch,Loading,UserState } from "umi"
+// umi里面可以导出在model里面定义暴露的接口
+interface UserListPage {
+  // users:[];
+  users:UserState;
+  dispatch:Dispatch;
+  userListLoading:boolean
+}
+const mapStateToProps = ({ users, loading }:{users:*** UserState ***,loading:Loading}) => {
+  console.log(loading)
+  return {
+    users,
+    userListLoading: loading.models.users,
+  }
+}
+
+02、
+import { FC } from "react"
+import { SingleUserType } from "data.d"
+
+interface FormValues {
+  [name: string]: any;
+}
+
+interface UserModalProps {
+  visible: boolean;
+  record: SingleUserType | undefined; // 因为在setRowData的时候赋值了undefined
+  closeHandler: () => void; // 无参无返回值
+  onFinish: (values: FormValues) => void;
+}
+
+****** 对于TS对props的写法 ******
+// 01、泛型---约束props的写法
+const UserModal: FC<UserModalProps> = (props) => {}
+
+// 02、使用两个对象的形式写法
+({}:{})
+对于对象的写法（写两个对象）
+{id,values}:{id:number,values:FormValues}
+
+03、useState中定义ts（使用泛型）
+const [record,setRecord] = useState<SingleUserType | undefined>(undefined)
+```
+
+### antd 的 Table 的封装 Pro-Table，request 获取数据，暂时先注释仓库里面走订阅获取数据的 dispatch
+
+```js
+01、引入，然后直接替换掉Table，写一个request属性获取数据
+02、改造service接口，传入分页数据
+export const getRemoteList = async ({page,per_pege})=>{
+  return extendRequest(`http://public-api-v1.aspirantzhang.com/users?page=${page}&per_page=${per_page}`,{
+    method:'get'
+  })
+}
+在使用到getRemoteList的地方传入对应的参数就行
+页面request获取数据写法
+const requestHander = async ({pageSize,current})=>{
+  const users = await getRemoteList({
+    page:current,
+    per_page:pageSize
+  })
+  return { // pro-table的表格数据
+    data:users.data,
+    success:true,
+    total:users.meta.total
+  }
+}
+
+03、修改删除逻辑
+在model怎么拿到仓库的数据呢？
+select方法就可
+*delete({payload:{id}},{put,call,select}){
+  const data = yield call(deleteOneList,{id})
+
+  // 成功之后更新页面
+  if(data){
+    const {page,per_page} = ***yield*** select(state=>state.***users***.meta)
+    yield put({
+        type:"getRemote",
+        // 因为调用getRemote要用到page和per_page,所以多传递一个payload字段
+        payload:{
+          page,
+          per_page
+        }
+    })
+  }else{
+    message.error("Delete Failed")
+  }
+}
+
+*getRemote({payload:{page,per_page}},{put,call}){
+  const data = yield call(getRemoteList,{page,per_page})
+  if(data){
+    yield put({ // 传递数据给页面
+      type:"getList",
+      payload:data
+    })
+  }
+}
+```
+
+### 复用 pro-table 的 reload 方法
+
+```js
+01、引入interface
+02、定义ref
+03、赋值table：actionRef={ref}
+04、点击reload的时候
+const reloadHandler = ()=>{
+  ref.current.reload()
+}
 ```
 
 ### 小技巧
@@ -528,6 +784,12 @@ tree / f;
 02、Modal中的Form控制台报错，强制预渲染Modal
 03、react生命周期render是不能有setState更新
 04、在model同一个中的subscribtion订阅中dispatch的时候，type可以直接写effects或者reducers中的函数名字，但在页面和仓库沟通时候的dispatch的type要加上namespace："users/edit"
+05、******* reducers不允许返回undefined ******************
+06、model中定义的接口interface，导出后，可以很神奇的在umi中导入进来
+07、很多文件都要用的接口，可单独新建一个文件夹写接口data.d.ts,使用的时候导入,可以省略ts结尾的文件
+08、对于太复杂的数据，判断类型直接使用any
+09、表单提交失败的情况一般是校验不通过的时候触发onFinishFailed
+10、pro-table的刷新是基于request方法来的，使用antd的Pagination的话，request和reload就失效了
 ```
 
 ### useState 这个 hook 在 set 之后的**_下一步_**怎么获取到最新状态
@@ -543,4 +805,194 @@ Table的某一行可以直接拿到这一样的数据啊
 你都已经可以set了，说明可以直接用了啊，就可以不参与状态了
 
 修改成功之后关闭弹窗，刷新的话就是重新调用一下列表，删除也同理
+```
+
+### umi-request 请求流程：
+
+```js
+本地访问远程会发送两次请求
+第一次options请求询问远程支持什么方式的请求
+第二次才是真正的前后端交互
+
+umi的请求主体直接是在error.data里面
+umi-request则在json对象里面：error.data.message
+```
+
+### 本 demo 页面加载流程-思路逻辑
+
+```js
+约定式路由在进入某一个页面之后，订阅者会监听路径，触发相应的effects和reducers，得到数据之后返回给页面
+在使用pro-table的时候，首先页面监听，然后触发pro-table的request属性，请求数据，但是reducers还在等异步结果
+所以表格没数据，但是使用pro-table刷新一下就有了（又运行了一下request）
+
+解决：pro-table直接使用异步接口返回数据（绕过仓库，直接使用接口）（仓库和页面各自走各自的）
+```
+
+```js
+01、
+隐藏查询：api
+search属性置为false
+02、
+pro-table的分页是定死的，如果后端出错，分页显示调到对应页了，但数据是原来页的
+如果改用antd的分页，则pro-table的request和reload也不能用了
+pagination={false} 取消pro-table的默认分页，引入antd的Pagination，model处重新订阅getRemote获取数据
+是第一次，给page和per_page默认值
+if(pathname === "/users"){
+  dispatch({
+    type:"getRemote",
+    payload:{
+      page:1,
+      per_page:5
+    }
+  })
+}
+
+<Pagination
+  total={users.meta.total}
+  onChange={paginationHandler}
+  onShowSizeChange={paginationHandler}
+  current={users.meta.page} // 通过后端来控制显示当前页（解决切换页码数据失败的问题）
+  pagination={users.meta.per_page} // 通过后端来显示默认显示多少条（解决第一页显示五条，第二页显示10条的问题）
+/>
+
+```
+
+### 大 Bug，错误处理，必须 throw error，后端接口才会捕捉 catch，然后 return 我们写的 false
+
+```js
+01、
+优化：
+编辑后天失败的时候，不要关闭弹窗
+最好的效果是：点击提交后显示loading，成功后关闭，失败后不关闭弹框
+
+const onFinish = async (values:FormValues) => {
+  let id = 0;
+  if(record){
+    id = record.id
+  }
+  if(id){
+    const result = await editRecord({id,values});
+    if(result){
+      // 编辑成功
+      setIsShowModel(false)
+    }else{
+      message.error("Edit Failed")
+    }
+  }else{
+    const result = await addRecord({values});
+    if(result){
+      setIsShowModel(false)
+    }else{
+      message.error("Add failed")
+    }
+  }
+}
+
+02、
+// 简化代码
+let serviceFun;
+if(id){
+  serviceFun = editRecord
+}else{
+  serviceFun = addRecord
+}
+const result = await serviceFun({id,values});
+if(result){
+  setIsShowModel(false)
+  message.success(`${id===0?"Add":"Edit"} Successfully.`)
+
+  dispatch({
+    type:"getRemote",
+    payload:{
+      page:users.meta.page,
+      per_page:users.meta.per_page
+    }
+  })
+}else{
+  message.error(`${id===0?"Add":"Edit"} Failed.`)
+}
+
+03、
+// 点击提交的时候加一个loading状态
+<Modal
+  confirmLoading={confirmLoading}
+/>
+// 在父组件加一个state状态，并传递给子组件
+const [confirmLoading,setConfirmLoading] = useState(false)
+// 在点击提交的时候改成true，在成功或者失败的时候都要改成false，给使用者重新提交
+const onFinish = async (values:FormValues) => {
+  setConfirmLoading(true) // 加载中
+  let id = 0;
+
+  let serviceFun;
+  if(id){
+    serviceFun = editRecord
+  }else{
+    serviceFun = addRecord
+  }
+  const result = await serviceFun({id,values});
+  if(result){
+    setIsShowModel(false)
+    message.success(`${id===0?"Add":"Edit"} Successfully.`)
+    dispatch({
+      type:"getRemote",
+      payload:{
+        page:users.meta.page,
+        per_page:users.meta.per_page
+      }
+    })
+    // 成功取消加载
+    setConfirmLoading(false) // 加载中取消
+  }else{
+    // 失败取消加载
+    setConfirmLoading(false) // 加载中取消
+    message.error(`${id===0?"Add":"Edit"} Failed.`)
+  }
+}
+```
+
+### 重写实现 reload
+
+```js
+;<ProTable
+  options={{
+    density: true,
+    fullScreen: true,
+    reload: () => {
+      resetHandler()
+    },
+    setting: true,
+  }}
+  // 添加title
+  headerTitle="User List"
+  toolBarRender={() => [
+    <Button type="primary" onClick={addHandler}>
+      Add
+    </Button>,
+    <Button onClick={resetHandler}>Reload</Button>,
+  ]}
+/>
+const resetHandler = () => {
+  刷新页面就是请求下仓库数据
+  dispatch({
+    type: "users/getRemote",
+    payload: {
+      page: users.meta.page,
+      per_page: users.meta.per_page,
+    },
+  })
+}
+
+现在可以删除以前写的通过ref实现的刷新功能
+```
+
+### Form.Item 里面给 DatePicker 赋初始值，应该在给调单赋初始值的时候
+
+```js
+;<DatePicker showTime />
+
+form.setFieldsValue({
+  ...record,
+  create_time: moment(record.create_time),
+})
 ```
