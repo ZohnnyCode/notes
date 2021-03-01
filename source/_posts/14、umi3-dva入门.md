@@ -651,7 +651,7 @@ const UserModel: UserModelType = {
       page: 1,
     },
   },
-}
+};
 ```
 
 ```js
@@ -855,6 +855,26 @@ if(pathname === "/users"){
   pagination={users.meta.per_page} // 通过后端来显示默认显示多少条（解决第一页显示五条，第二页显示10条的问题）
 />
 
+03、分页回调
+const paginationHandler = (page: number, pageSize?: number) => {
+  dispatch({
+    type: 'users/getRemote',
+    payload: {
+      page,
+      per_page: pageSize ? pageSize : users.meta.per_page,
+    },
+  });
+};
+
+const pageSizeHandler = (current: number, size: number) => {
+  dispatch({
+    type: 'users/getRemote',
+    payload: {
+      page: current,
+      per_page: size,
+    },
+  });
+};
 ```
 
 ### 大 Bug，错误处理，必须 throw error，后端接口才会捕捉 catch，然后 return 我们写的 false
@@ -954,12 +974,12 @@ const onFinish = async (values:FormValues) => {
 ### 重写实现 reload
 
 ```js
-;<ProTable
+<ProTable
   options={{
     density: true,
     fullScreen: true,
     reload: () => {
-      resetHandler()
+      resetHandler();
     },
     setting: true,
   }}
@@ -971,28 +991,285 @@ const onFinish = async (values:FormValues) => {
     </Button>,
     <Button onClick={resetHandler}>Reload</Button>,
   ]}
-/>
+/>;
 const resetHandler = () => {
-  刷新页面就是请求下仓库数据
+  刷新页面就是请求下仓库数据;
   dispatch({
     type: "users/getRemote",
     payload: {
       page: users.meta.page,
       per_page: users.meta.per_page,
     },
-  })
-}
+  });
+};
 
-现在可以删除以前写的通过ref实现的刷新功能
+现在可以删除以前写的通过ref实现的刷新功能;
 ```
 
 ### Form.Item 里面给 DatePicker 赋初始值，应该在给调单赋初始值的时候
 
 ```js
-;<DatePicker showTime />
+<DatePicker showTime />;
 
 form.setFieldsValue({
   ...record,
   create_time: moment(record.create_time),
+});
+```
+
+### Input、DatePicker 给 value，Switch 给 checked
+
+### 优化
+
+```js
+调整表单显示布局;
+const layout = {
+  labelCol: { span: 4 },
+  wrapperCol: { span: 20 },
+};
+<Form {...layout} />;
+```
+
+### Modal 的 title 动态显示编辑与添加
+
+```js
+title={ record ? "Edit ID:" + record.id : "Add" }
+```
+
+### 分页的 pageSize 是可选的、注意给默认值
+
+```js
+pageSize?:number
+
+per_page: pageSize ? pageSize : users.meta.per_page
+```
+
+### 给表格列添加对应的字段类型（valueType）
+
+```js
+{
+  title:"ID",
+  dataIndex:'id',
+  valueType:"digit",
+  key:'id'
+}
+```
+
+### 给表格的列 columns 添加 ts 类型声明
+
+```js
+const columns: ProColumns<SingleUserType>[] = [{}, {}];
+```
+
+### 复用代码
+
+```js
+添加或者编辑成功之后，要刷新列表
+直接复用刷新表格的函数：
+resetHandle()
+
+```
+
+### 点击添加的时候---给表单项的开关赋初始值
+
+```js
+<Form
+  initialValues={{
+    status: true,
+  }}
+/>
+```
+
+### 编辑的时候开关的显示开与否，转后端给的值为布尔值
+
+```js
+form.setFieldsValue({
+  ...record,
+  create_time: moment(record.create_time),
+  status: Boolean(record.status),
+  status: record.status === 1 ? true : false,
+});
+```
+
+### 捋思路
+
+```js
+添加逻辑：
+        点击添加，显示弹框，清空表单
+        表单编辑好后、点击提交，根据全局的rowData判断有无id
+        有，是编辑
+        无，是添加，dispatch一个add的effect，带上type和payload
+        编辑成功，关闭弹窗
+
+        model逻辑：去写effect，去写service
+
+        此时实现添加，但是有个bug（点编辑后取消编辑，去添加会遗留编辑的数据），在添加的时候，要清空表单（表单内容是从父级传递过来的）
+        useEffect(()=>{
+            if(rowData === undefined){ // 点击添加按钮的时候，设置的undefined。setRowData(undefined)
+                form.resetFields();
+            }else{
+                form.setFieldsValue(rowData)  ******  如果rowData为无效值，表单赋值不生效 ******
+            } // 如果是undefined就清空，否则赋值
+        },[visible])
+
+错误提示优化：
+            service层有值的返回值，无值的返回布尔值给model
+```
+
+### useEffect 第二个参数如果是常量，则代表不会变
+
+```js
+useEffect(() => {}, [1]);
+```
+
+### 真正组件化
+
+```js
+01、每一部分都拆开成一个函数组件，然后调用:{name()}    ***************************************************************
+
+02、{ variable && Object.keys(variable).length? (ReactNode) : null } // 这里面可以判断要不要渲染某个组件
+
+03、partial<T> : 则T里面的属性代表可选，partial(可以直接引用)
+
+04、分步骤是通过一个变量来判断是第几步，返回对应的reactNode
+
+05、表单校验
+
+// 文本域
+<FormItem
+  name="desc",
+  label="规则描述",
+  rules={[
+    {
+      requied:true,
+      message:'请输入至少五个字符的规则描述！',
+      min:5
+    }
+  ]}
+>
+  <TextArea rows={4} placeholder="请输入至少五个字符" />
+</FormItem>
+
+// 时间范围选择
+<FormItem
+  name="time",
+  label="开始时间",
+  rules={[
+    {
+      requied:true,
+      message:'请选择开始时间！',
+    }
+  ]}
+>
+  <DatePicker style={{ width : '100%' }}
+    showTime
+    format="YYYY-MM-DD HH:mm:ss"
+    placeholder="选择开始时间"
+  />
+</FormItem>
+
+// 下拉框
+<FormItem
+  name="frequency",
+  label="调度周期",
+>
+  <Select
+    style={{width:'100%'}}
+  >
+    <Option value="month">月</Option>
+    <Option value="week">周</Option>
+  </Select>
+</FormItem>
+```
+
+### 编辑和删除
+
+```js
+const editAndDelete = (key, currentItem) => {
+  if (key === "edit") showEditModal(currentItem);
+  else if (key === "delete") {
+    Modal.confirm({
+      title: "删除任务",
+      content: "确定删除改任务吗？",
+      okText: "确认",
+      cancelText: "取消",
+      onOk: () => deleteItem(currentItem.id),
+    });
+  }
+};
+```
+
+### 更多 hover 显示菜单
+
+```js
+const MoreBtn = ({ item }) => (
+  <Dropdown
+    overlay={
+      <Menu onClick={({ key }) => editAndDelete(key, item)}>
+        <Menu.Item key="edit">编辑</Menu.Item>
+        <Menu.Item key="delete">删除</Menu.Item>
+      </Menu>
+    }
+  >
+    <a>
+      更多 <DownOutLined />
+    </a>
+  </Dropdown>
+);
+```
+
+### 通知 reducers
+
+```js
+yield put({
+  type:'queryList',
+  payload:Array.isArrray(result)?result:[]
 })
 ```
+
+### 判断添加成功与否
+
+```js
+const handleAdd = async (fields) => {
+  const hide = message.loading("正在添加");
+
+  try {
+    await addRule({
+      desc: fields.desc,
+    });
+    hide();
+    message.success("添加成功");
+    return true;
+  } catch (error) {
+    hide();
+    message.error("添加失败请重试！");
+    return false;
+  }
+};
+```
+
+### @umijs/plugin-model 的使用
+
+```js
+src/models/zhang.js，里面的每个文件暴露一个***需要默认导出***一个函数
+
+export default () => {
+  let myName = "zhang"
+  return { myName }
+}
+
+文件名则对应最终 model 的 name，你可以通过插件提供的 API 来消费 model 中的数据
+useModel 是一个 Hook，提供消费 Model 的能力，使用示例如下
+import { useModel } from 'umi';
+
+const { myName } = useModel('zhang') //model的name就是文件名
+其他地方即可使用***myName***
+```
+
+### 为啥要使用泛型
+
+```js
+做到对类型的灵活控制;
+```
+
+### 表单初始值，umi 路由跳转，插件
