@@ -82,6 +82,15 @@ Umi 中约定 src/global.css 为全局样式，如果存在此文件，会被自
 
 ```
 
+### 搭建基础页面
+
+```js
+01、写样式、引入antd的Table
+02、第一步：用户访问users，通过订阅者调用reducer返回仓库数据给页面（页面的state包含有model的namespace）
+    ({users}) => ({users})
+
+```
+
 ### umi 跟 dva 结合
 
 ```js
@@ -130,6 +139,8 @@ action = {
 }
 ```
 
+### 走订阅和 reducer
+
 ```js
 03、手写model  +  ts
 
@@ -170,7 +181,7 @@ const UserModel:UserModelType = {
     }
 }
 
-exports default UserModel
+export default UserModel
 ```
 
 ### TS 加持
@@ -180,10 +191,12 @@ umi对reducers，effets，subscribtions有默认的类型声明
 固定值就直接可使用固定值
 ```
 
+### 走订阅+effect+reducer+connect
+
 ### 异步处理完整流程数据流 service--->effects--->reducer
 
 ```js
-页面监听，订阅以后分发effects，effects再put给reducers，reducer再最后返回
+页面监听，订阅以后分发effects，effects然后call（services）再put给reducers，reducer再最后返回
 // 第一步
 interface UserModelType {
   effects: {
@@ -201,6 +214,7 @@ const UserModel: UserModelType = {
   },
   effects: {
     *getRemote(action, { put, call }) { // effects找reducers用put，找service用call
+    // 这里的action没用到
       const data = [];
 
       yield put({
@@ -225,6 +239,7 @@ const UserModel: UserModelType = {
 
 现在谁来触发effects呢，把订阅subscriptions中的dispatch中的type改成effects中的函数名即可
 
+### ****************************************************************走异步函数（加async）*******************************
 // 第二步
 // 现在模拟请求接口
 services文件：
@@ -235,9 +250,15 @@ export const getRemoteList = async params => {
 model文件中引入：
 import {getRemoteList} from "./services"
 
+reducers: {
+    getList(state, { payload }) {   *******************解构一个action*********************************
+      return payload;
+    },
+  },
+
 effects: {
     *getRemote(action, { put, call }) {
-      const data = yield call(getRemoteList)
+      const data = yield call(getRemoteList)    ************************注意加yield************************************
 
       yield put({
         type: "getList",
@@ -247,6 +268,8 @@ effects: {
       });
     },
   },
+
+<Table dataSource={users.data} />
 
 // 第三步：真正调用后端接口
 import { request } from "umi"
@@ -268,12 +291,14 @@ effects: {
 
       yield put({
         type: "getList",
-        payload:data
+        payload:data // 这个data不是简单的数组对象结构
       });
     },
   },
 
 ```
+
+### Dav:用来 model 自动启用
 
 ### 代理,只在开发的时候好使
 
@@ -329,22 +354,44 @@ reducers:{
 },
 ```
 
+### 引入 Modal 子组件，通过属性的方式控制显示影藏（在父组件定义一个状态）
+
+```js
+    点击改变状态，传给子组件
+
+    实现modal框的确定和取消按钮点击逻辑，因为状态在父组件那里，所以取消的回调定义在父组件里头
+
+```
+
 ### 接下来的流程
 
 ```js
 01、拿到数据给Table赋值
 02、修改弹窗显示内容结构（表单）
 03、给表单搞默认值(三步)
+
+  ###  ***********************父组件点击编辑把单条数据rowData通过属性传递给子组件**************************************
   const [form] = Form.useForm();
 
-  useEffect(()=>{
-    form.setFieldsValue(rowData); // const [rowData,setRowData] = useState({}) 点击编辑的时候保存的一行值 // 给表单赋值初始值
+  useEffect(()=>{ // 在渲染的时候不要赋值，在页面挂载之后才赋值
+    form.setFieldsValue(rowData); // const [rowData,setRowData] = useState({}) 点击编辑的时候保存的一行值 // 给表单赋值初始值、可更新
+    // initialValues:只在初始化的时候有效，不能更新
+
+    // rowData是一个对象，属性为Form.Item对应的name属性
   },[visible])
 
   <Form form={form}></Form>
 
 注意：
 01、Modal中用Form报警告问题：forceRender
+```
+
+### \***\*\*\*\*\***\*\*\*\*\***\*\*\*\*\***点击 Modal 的 ok 来触发表单的提交\***\*\*\*\*\***\*\*\*\*\***\*\*\*\*\***
+
+```js
+点击提交onOk，触发表单的onFinish，修改仓库数据（dispatch(从state中解构出来)，注意action的type写法），然后call（接口，注意传参）再和后端接口交流
+onFinish的形参默认接收表单的name属性对应的值
+
 ```
 
 ### 处理修改逻辑
@@ -375,7 +422,7 @@ const onFinish = (values: any) => {
 
 02、去写service接口
 export const edit = async ( {id,values} ) =>{
-  return request(`http://public-api-v1.aspirantzhang.com/users${id}`,{
+  return request(`http://public-api-v1.aspirantzhang.com/users/${id}`,{
     method:'put',
     data:values // ******************* 注意valus本来就是对象了 *********************
   }).then(res=>{
@@ -393,6 +440,8 @@ export const edit = async ( {id,values} ) =>{
     }
 }
 ```
+
+### 处理完修改后，应该调用**\*\*\*\***\*\*\***\*\*\*\***异步的 effect 请求列表数据\***\*\*\*\*\*\*\***\*\***\*\*\*\*\*\*\***
 
 ### 处理删除逻辑
 
@@ -717,10 +766,17 @@ const requestHander = async ({pageSize,current})=>{
     page:current,
     per_page:pageSize
   })
-  return { // pro-table的表格数据
-    data:users.data,
-    success:true,
-    total:users.meta.total
+  if(users){
+    return { // pro-table的表格数据
+        data:users.data,
+        success:true,
+        total:users.meta.total
+    }
+  }else{
+    return {
+        data:[],
+        success:true,
+    }
   }
 }
 
@@ -852,7 +908,7 @@ if(pathname === "/users"){
   onChange={paginationHandler}
   onShowSizeChange={paginationHandler}
   current={users.meta.page} // 通过后端来控制显示当前页（解决切换页码数据失败的问题）
-  pagination={users.meta.per_page} // 通过后端来显示默认显示多少条（解决第一页显示五条，第二页显示10条的问题）
+  pageSize={users.meta.per_page} // 通过后端来显示默认显示多少条（解决第一页显示五条，第二页显示10条的问题）
 />
 
 03、分页回调
@@ -1273,3 +1329,18 @@ const { myName } = useModel('zhang') //model的name就是文件名
 ```
 
 ### 表单初始值，umi 路由跳转，插件
+
+```js
+01、
+reducer一调用就代表仓库给页面返回值了;
+
+02、
+约定式路由（无路由配置）
+（有订阅者先走订阅者（初始化仓库），protable的request不走）
+
+不走订阅，走request，则仓库初始化不了
+正常来说走仓库（例如删除成功之后可以直接通过select方法获取仓库数据）
+
+03、刷新是基于request的，有request才有protable自带的刷新
+分页也是基于request的，有request才有分页
+```
