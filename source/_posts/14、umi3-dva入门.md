@@ -938,7 +938,7 @@ const pageSizeHandler = (current: number, size: number) => {
 ```js
 01、
 优化：
-编辑后天失败的时候，不要关闭弹窗
+编辑后台失败的时候，不要关闭弹窗
 最好的效果是：点击提交后显示loading，成功后关闭，失败后不关闭弹框
 
 const onFinish = async (values:FormValues) => {
@@ -1343,4 +1343,12 @@ reducer一调用就代表仓库给页面返回值了;
 
 03、刷新是基于request的，有request才有protable自带的刷新
 分页也是基于request的，有request才有分页
+```
+
+### Form 的默认值只给表单的赋值是 value 的
+
+```js
+如果是checked，需要在Form.Item上声明valuePropName="checked",然后给表单赋初始值才会生效,
+
+给表单在初始化的时候赋值：initialValues={{...:...}}
 ```
