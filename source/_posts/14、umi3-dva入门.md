@@ -752,6 +752,9 @@ const [record,setRecord] = useState<SingleUserType | undefined>(undefined)
 ### antd 的 Table 的封装 Pro-Table，request 获取数据，暂时先注释仓库里面走订阅获取数据的 dispatch
 
 ```js
+下载：
+npm i @ant-design/pro-table
+
 01、引入，然后直接替换掉Table，写一个request属性获取数据
 02、改造service接口，传入分页数据
 export const getRemoteList = async ({page,per_pege})=>{
