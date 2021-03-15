@@ -158,6 +158,7 @@ console.log(d.price,d.name,d.age) // 结果： 190 大锤子 ""
 // 监听错误
 window.addEventListener('error',(e)=>{
   console.log(e.message)
+  report() // 上报逻辑
 },true) // 要捕获而不是冒泡
 
 // 校验规则
@@ -184,3 +185,64 @@ d.name = "大锤子"
 d.age = 18
 console.log(d.price,d.name,d.age) // 结果： 190 大锤子 ""
 ```
+
+```js
+场景3：我有多个组件，每个组件有唯一的id，让我知道报错的时候是谁报错
+生成组件的时候都会随机生成一个唯一的id，生成的时候就只读了，不可更改
+
+随机生成一个随机数，转化成字符串，截取后8位
+Math.random().toString().splice(-8)
+
+// 十次都一样的
+class Component {
+  constructor(){
+    this.id = Math.random().toString().slice(-8)
+  }
+}
+
+现在实例化的时候生成的id都是随机且唯一的，且每次读的时候都是一样的
+    但是id不是只读的可以被修改
+let com = new Component()
+let com2 = new Component()
+for(let i=0;i<=10;i++){
+  console.log(com.id) // 十次都一样
+}
+com.id = "abc"
+console.log(com.id,com2.id) // abc
+
+// 定义类的只读属性，但是现在10次每次返回的都是随机的数值
+class Component {
+  get id(){
+    return Math.random().toString().slice(-8)
+  }
+}
+
+com.id = "abc"
+console.log(com.id,com2.id) // 结果：随机值 随机值
+
+// 现在放到构造函数里面不行，只读的属性里面也不行
+
+03、使用代理
+// 每次生成都是唯一的（不同实例之间唯一的）、只读的
+class Component {
+  constructor(){
+    this.proxy = new Proxy({
+      id:Math.random().toString().slice(-8)
+    },{}) // 第二个参数空，代表无操作
+  }
+
+  get id(){
+    return this.proxy.id
+  }
+}
+com.id = "abc"
+console.log(com.id,com2.id) // 结果：随机值 随机值(真正实现)
+```
+
+### 想到中介，要想到 proxy
+
+```js
+把我们的信息放到proxy做代理操作
+```
+
+### 2.51
