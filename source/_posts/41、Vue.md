@@ -3,10 +3,20 @@ title: 41、Vue
 date: 2021-03-17 22:35:13
 tags:
 ---
+
 ```js
 引入的组件要注册
 ```
+
+# 创建 Vue 项目
+
+```js
+安装脚手架：npm install @vue/cli -g
+创建模板：vue create 名字
+```
+
 ### 组件传值
+
 ```js
 父向子：通过属性
 // 父组件
@@ -46,7 +56,7 @@ data(){
 }
 methods:{
   sendData(){
-    // this.$emit可以触发父级的自定义事件。第一个参数自定义事件，第二个参数要传的数据 
+    // this.$emit可以触发父级的自定义事件。第一个参数自定义事件，第二个参数要传的数据
     this.$emit('myEvent',this.childData)
   }
 }
@@ -85,4 +95,43 @@ methods:{
     store.setStateMessage("兄弟共享的数据")
   }
 }
+```
+
+### 侦听器
+
+```js
+侦听器：一个值变化，影响多个值（为了观察一个值）******检测路由变化，只能用侦听器
+计算属性：多个值改变为了得到一个结果，性能较好
+
+大多数情况都可以用计算属性解决问题
+```
+
+### Vue 实例
+
+```js
+new Vue()创建一个Vue实例
+
+所有的组件其实都是Vue实例
+
+每个Vue实例在被创建时都要进过一系列的初始化过程
+
+create(){
+  this.getData()
+}
+methods:{
+  getData(){
+    setTimeout(()=>{
+      this.fruitList = ["西红柿","番茄蛋","橙子"]
+    },2000)
+  }
+}
+
+// 显示加载中
+data(){
+  return {
+    loading:true
+  }
+}
+<p v-if="loading">loading...</p>
+<ul v-if="!loading"></ul>
 ```
