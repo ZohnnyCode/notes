@@ -74,7 +74,7 @@ ES5完全把o锁死了，就连中介自己也不可以操作
 ```
 
 ```js
-Object.entries(o) // 让一个对象以键值对的形式变成可遍历的
+Object.entries(o); // 让一个对象以键值对的形式变成可遍历的
 ```
 
 ```js
@@ -178,7 +178,7 @@ const validator = (target,key,value) => {
     }
 }
 
-d.price = 301 // 触发报错，下面语句不执行
+d.price = 301 // 触发报错，下面语句不执行,下面代码不执行
               // 相当于用错误中断了用户的违规操作，并且能上报
               // 这里利用proxy结合加上错误处理，让代码更加解耦，完成上报机制
 d.name = "大锤子"
@@ -191,7 +191,7 @@ console.log(d.price,d.name,d.age) // 结果： 190 大锤子 ""
 生成组件的时候都会随机生成一个唯一的id，生成的时候就只读了，不可更改
 
 随机生成一个随机数，转化成字符串，截取后8位
-Math.random().toString().splice(-8)
+Math.random().toString(36进制).splice(-8)
 
 // 十次都一样的
 class Component {
@@ -235,6 +235,9 @@ class Component {
     return this.proxy.id
   }
 }
+for(let i=0;i<=10;i++){
+  console.log(com.id) // 十次都一样
+}
 com.id = "abc"
 console.log(com.id,com2.id) // 结果：随机值 随机值(真正实现)
 ```
@@ -242,7 +245,37 @@ console.log(com.id,com2.id) // 结果：随机值 随机值(真正实现)
 ### 想到中介，要想到 proxy
 
 ```js
-把我们的信息放到proxy做代理操作
+把我们的信息放到proxy做代理操作;
 ```
 
-### 2.51
+### 撤销代理操作
+
+```js
+不能用：new Proxy
+得用：Proxy.revocable(),后面操作跟new一样
+
+let o = {
+  name:'xiaoming',
+  price:190
+}
+
+let d = Proxy.revocable(o,{
+  get(target,key){
+    if(key === "price"){
+      return target[key] + 20
+    }else{
+      return target[key]
+    }
+  }
+})
+
+console.log(d.proxy.price,d)
+setTimeout(()=>{
+  d.revoke()
+  setTimeout(()=>{
+    console.log(d.proxy.price) // 报错，撤销后的代理数据无法再读取了
+  },100)
+},1000)
+
+此时的d不是简单的代理数据了，它现在包含两个内容，一个是代理的数据（d.proxy.price/name），一个是撤销的操作两个东西
+```

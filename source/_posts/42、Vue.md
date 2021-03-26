@@ -3,7 +3,9 @@ title: 42、Vue
 date: 2021-03-18 09:36:17
 tags:
 ---
+
 ### 插槽：创建更加灵活，更易扩展的组件
+
 ```js
 MyButton.vue
 <template>
@@ -18,8 +20,8 @@ MyButton.vue
 App.vue
 <template>
     <div id="app">
-        <my-utton></my-utton>
-        <my-utton></my-utton>
+        <my-utton>提交</my-utton>
+        <my-utton>注册</my-utton>
     </div>
 </template>
 <script>
@@ -61,7 +63,9 @@ Layout.vue
     </template>
 </layout>
 ```
-### DOM操作
+
+### DOM 操作
+
 ```js
 // 原生js
 <div id="box">Hello World</div>
@@ -79,7 +83,9 @@ mounted(){
     log(style.width)
 }
 ```
+
 ### 计算属性和侦听器
+
 ```js
 // 计算属性：data属性和computed属性定义的值都可以直接绑定在表达式中
 <p>{{message}}</p> // 类似data
@@ -144,7 +150,9 @@ watch:{
     }
 }
 ```
+
 ### 通过固定算法重新组织数据
+
 ```js
 // 定义过滤器
 filters:{
@@ -167,7 +175,9 @@ filters:{
 date:"2021-3-18"
 <h1>{{ date | dateFormat }}</h1>
 ```
+
 ### 表单处理:v-model
+
 ```js
 formData:{
     username:'',
@@ -214,7 +224,9 @@ postData(){
 <label for="">java</label>
 <input type="checkbox" value="java" v-model="formData.skill" />
 ```
+
 ### 路由
+
 ```js
 router-link必须写明to属性才可以显示标签体内容
 
@@ -232,7 +244,7 @@ router-link必须写明to属性才可以显示标签体内容
 data(){
     return {
         username:localStorage.getItem('usr')
-        showLogout:localStorage.getItem('usr') 
+        showLogout:localStorage.getItem('usr')
     }
 },
 watch:{
@@ -267,21 +279,25 @@ router.beforeEach((to,from,next)=>{
     }
 })
 ```
-### data里面的数据变成响应式
+
+### data 里面的数据变成响应式
+
 ```js
 // 第一种方法
 this.$set(item, "bring_img", "2");
 
 // 第二种方法
 this.rowData = {
-    ...item,
-    bring_img: "2",
-    fruit: ["西瓜"]
+  ...item,
+  bring_img: "2",
+  fruit: ["西瓜"],
 };
 
 // 这样不管在哪里，新增的属性就是响应式的了，只要改变，页面就会重新渲染
 ```
+
 ### 复选框操作
+
 ```js
 <CheckboxGroup v-model="checkAllGroup" @on-change="checkAllGroupChange">
     <Checkbox label="香蕉"></Checkbox>
@@ -302,12 +318,45 @@ if(isAllChecked){
 }else{
     checkAllGroup = []
 }
+
+// 复选框标签里面还可以使用图片img标签
 ```
-# 注意点
+
+### 前后台数据交互
+
 ```js
-遍历的时候注意加key
+// axios获取数据
+getFruitList(){
+    axios.get("http://127.0.0.1:3000/fruits").then(res => {
+        this.fruitList = res.data;
+    })
+}
+
+// 删除根据索引删除
+<button @click="del(index)">删除</button>
+
+del(index){
+    axios.delete(`http://127.0.0.1:3000/fruits/${index}`)
+        .then(res=>{
+            this.getFruitList();
+        })
+}
+
+// 获取数据：getFruitList()
+// 添加数据：postData()
+// 删除数据：del()
+
+// 以后封装axios
 ```
+
+# 注意点
+
+```js
+遍历的时候注意加key;
+```
+
 # 项目部署
+
 ```js
 // 配置文件
 .env.development
@@ -323,4 +372,15 @@ data(){
 
 VUE_APP_BASE_URL = "http://localhost:3000" // 开发环境
 VUE_APP_BASE_URL = "" // 生产环境
+```
+
+### 异步数据对搜索引擎不友好（Vue 单页面应用）
+
+### 服务端渲染更适合制作网站（nunjucks Vue 也可以制作服务端渲染的应用）
+
+### 项目发布
+
+```js
+1.发布到公网
+2.域名直接访问
 ```

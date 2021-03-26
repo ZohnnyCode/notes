@@ -175,7 +175,7 @@ data(){
 }
 ```
 
-### 配置别名
+### 配置别名(vue.config.js)
 
 ```js
 // 配置后直接使用别名
@@ -230,16 +230,18 @@ const routers = [
 ];
 
 <template>
-    <router-view></router-view>
-    <div id="nav">
-        <router-link to="/">首页</router-link>
-        <router-link to="/category">分类</router-link>
-        <router-link to="/shopcart">购物车</router-link>
-        <router-link to="/profile">我的</router-link>
-    </div>
-</template>
+  <router-view></router-view>
+  <div id="nav">
+    <router-link to="/">首页</router-link>
+    <router-link to="/category">分类</router-link>
+    <router-link to="/shopcart">购物车</router-link>
+    <router-link to="/profile">我的</router-link>
+  </div>
+</template>;
 ```
+
 ### 引入字体图标
+
 ```js
 去iconfont下载代码引入到css文件夹中，然后在App.vue中引入iconfont.css文件
 <router-link class="tab-bar-item" to="/">
@@ -279,7 +281,9 @@ const routers = [
     }
 }
 ```
-### Vue3使用插槽
+
+### Vue3 使用插槽
+
 ```js
 首先定义插槽
 template
@@ -292,7 +296,7 @@ template
 使用
 <nav-bar>
     <template v-slot:left></template>
-    <template v-slot:default></template> // 
+    <template v-slot:default></template> //
     <template></template>
 </nav-bar>
 ```
