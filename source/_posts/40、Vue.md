@@ -79,6 +79,7 @@ vue、babel、router、vuex、css（Vue3、history、sass（dart）、package.js
 05、components-->common-->content
 
 每个页面的组件在每个页面下创建
+home、category、detail、cart、profile
 ```
 
 ### 项目初始化
@@ -93,7 +94,7 @@ vue、babel、router、vuex、css（Vue3、history、sass（dart）、package.js
 公共样式
     下载normalize.css
     base.css
-    @import "./normalize.css"
+    @import "./normalize.css"; // 这里一定要加分号，不然报错
         :root {
             --color-text:#666;
             --color-high-text:#42bBaa;
@@ -302,6 +303,7 @@ const routers = [
             </slot> // 具名插槽
         </div>
         <div class="center">
+            // 默认值不需要加name属性
             <slot>默认值</slot>
         </div>
         <div class="footer">
@@ -344,7 +346,7 @@ const routers = [
 
 // 在首页中使用
 使用的地方引入：import NavBar from "./"
-注册组件：component:{
+注册组件：components:{
     NavBar
 }
 
