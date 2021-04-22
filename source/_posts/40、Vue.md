@@ -178,7 +178,7 @@ data(){
 }
 ```
 
-### 配置别名
+### 配置别名(vue.config.js)
 
 ```js
 // 配置后直接使用别名
@@ -233,7 +233,8 @@ const routers = [
 ]
 
 // App.vue组件
-;<template>
+
+<template>
   <router-view></router-view>
   <div id="nav">
     <router-link to="/">首页</router-link>
@@ -904,4 +905,9 @@ const tabClick(自定义事件) = (index) => {
 ```js
 common:其他项目页可以使用的组件
 content：本项目公用组件
+<nav-bar>
+    <template v-slot:left></template>
+    <template v-slot:default></template> //
+    <template></template>
+</nav-bar>
 ```

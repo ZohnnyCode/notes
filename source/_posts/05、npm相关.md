@@ -18,3 +18,15 @@ tags:
 ~:指定安装小版本(第二个数字) --->这个得自己手动加
 
 ```
+
+### 记录安装 node-sass
+
+```js
+01、没有python装python
+02、连接超时挂代理
+    set https_proxy=http://127.0.0.1:12639
+    set http_proxy=http://127.0.0.1:12639
+
+03、Visual C++
+    npm install --global --production windows-build-tools
+```
