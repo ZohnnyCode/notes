@@ -109,7 +109,10 @@ let d = new Proxy(o,{
 })
 
 d.age=400 // 写不进去
-d.age // "" 读则undefined
+d.age // "" 读则undefined,但上面我给了空
+      // 两个点：第一赋值不生效，第二读不到的属性做了兼容性处理
+
+console.log(d.name,d.price)
 
 Proxy轻松做到了数据结构不被破坏，对你的写操作进行校验，做到能写就写，否则拒绝
 
