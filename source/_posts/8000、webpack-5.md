@@ -268,3 +268,27 @@ module.exports跟exports导出的对象是指向同一个的;
 导出一个属性;
 module.exports.abc = exports.abc;
 ```
+
+#### 模块化原理
+
+```js
+解决webpack中HtmlWebpackPlugin警告报错问题
+npm i html-webpack-plugin@next -D
+
+模式为development的时候，devtool是eval，看原理的时候设置成source-map
+
+立即执行函数的写法
+(function(){
+
+}())
+
+(function(){
+
+})()
+
+让函数变表达式：!取反变表达式
+!function(){
+
+}()
+
+```
