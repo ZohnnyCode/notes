@@ -136,3 +136,19 @@ const handleAddItem = ()=>{
     });
 };
 ```
+
+#### ProTable 的列 sorter 排序，点击分页没有 sorter 导致测试环境报错
+
+```js
+本地环境不会报错，测试环境报错
+
+解决：拿sorter的时候增加容错判断处理
+
+if (sorter?.updatedAt === 'ascend') {
+    params.sort = `updatedAt:asc`;
+} else if (sorter?.updatedAt === 'descend') {
+    params.sort = `updatedAt:desc`;
+} else {
+    params.sort = `updatedAt:desc,id:desc`;
+}
+```
