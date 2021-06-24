@@ -32,3 +32,40 @@ tags:
 #### 减少回流和重绘注意点
 
 1、用 transform 代替 top，left ，margin-top， margin-left... 这些位移属性
+
+#### 弹性子元素内容超出处理
+
+```js
+<div class="one">
+  <div class="l"></div>
+  <div class="c">
+    <p>
+      ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss
+    </p>
+  </div>
+  <div class="r"></div>
+</div>
+.one {
+    width: 100%;
+    display: flex;
+}
+
+.l,
+.r {
+    height: 100px;
+    width: 200px;
+    background: red;
+}
+
+.c {
+    flex: 1;
+    display: table-cell;
+}
+
+.c p {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+    word-wrap: break-word;
+}
+```
